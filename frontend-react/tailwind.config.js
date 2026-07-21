@@ -4,22 +4,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: '#0d1117',
-        casing: '#14181f',
-        panel: '#1b212b',
-        panelBorder: '#2a3240',
-        screen: '#081a10',
-        phosphor: '#3dffa0',
-        phosphorDim: '#1f8a5c',
+        bg: '#05070d',
+        casing: '#0a0f1c',
+        panel: '#111c2e',
+        panelBorder: '#243450',
+        screen: '#04070f',
+        phosphor: '#7fd4ff',
+        phosphorDim: '#5c7fa3',
         red: '#e3350d',
-        redDim: '#7a1c08',
+        redDim: '#a8260a',
         gold: '#ffcb05',
-        muted: '#7c8698',
-        danger: '#ff5c5c',
+        muted: '#7788a0',
+        danger: '#ff5b5b',
+        text: '#eef2f9',
       },
       fontFamily: {
-        pixel: ['"Press Start 2P"', 'monospace'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        pixel: ['"Baloo 2"', 'sans-serif'],
+        mono: ['"Nunito"', 'sans-serif'],
       },
       keyframes: {
         flash: {
@@ -30,10 +31,6 @@ export default {
         popIn: {
           '0%': { transform: 'scale(0.9)', opacity: 0 },
           '100%': { transform: 'scale(1)', opacity: 1 },
-        },
-        slideUp: {
-          '0%': { transform: 'translate(-50%, 12px)', opacity: 0 },
-          '100%': { transform: 'translate(-50%, 0)', opacity: 1 },
         },
         slideDown: {
           '0%': { transform: 'translateY(-6px)', opacity: 0 },
@@ -48,28 +45,24 @@ export default {
           '40%': { transform: 'scale(1.18)' },
           '100%': { transform: 'scale(1)' },
         },
-        shimmer: {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
-        },
         wiggle: {
           '0%, 100%': { transform: 'translateX(0)' },
           '25%': { transform: 'translateX(-4px)' },
           '75%': { transform: 'translateX(4px)' },
         },
+        spinSlow: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
       },
       animation: {
         flash: 'flash 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
         popIn: 'popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        slideUp: 'slideUp 0.3s ease-out',
         slideDown: 'slideDown 0.25s ease-out',
         pulseSoft: 'pulseSoft 1.8s ease-in-out infinite',
         coinPop: 'coinPop 0.35s ease-out',
-        shimmer: 'shimmer 2.2s linear infinite',
         wiggle: 'wiggle 0.4s ease-in-out',
-      },
-      transitionTimingFunction: {
-        bounce: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        spinSlow: 'spinSlow 6s linear infinite',
       },
     },
   },

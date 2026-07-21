@@ -62,7 +62,7 @@ export default function App() {
   }
 
   return (
-    <div className="max-w-[1100px] mx-auto p-5 min-h-screen font-mono text-[#e7ecf3]">
+    <div className="max-w-[1100px] mx-auto p-5 min-h-screen font-mono text-text">
       <div className="bg-casing border border-panelBorder rounded-2xl p-5 shadow-2xl">
         <Header state={state} />
 

@@ -7,36 +7,21 @@ html, body, #root {
 }
 
 body {
-  background-color: #0d1117;
+  background-color: #05070d;
   background-image:
-    radial-gradient(circle at 15% -10%, rgba(227,53,13,0.08), transparent 40%),
-    radial-gradient(circle at 100% 0%, rgba(61,255,160,0.06), transparent 35%);
-}
-
-/* CRT scanline overlay for the "screen" panel */
-.scanlines::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0,0,0,0.18) 0px,
-    rgba(0,0,0,0.18) 1px,
-    transparent 2px,
-    transparent 3px
-  );
-  mix-blend-mode: overlay;
-  opacity: 0.5;
+    radial-gradient(circle at 15% -10%, rgba(79,209,255,0.08), transparent 40%),
+    radial-gradient(circle at 100% 0%, rgba(63,169,255,0.06), transparent 35%),
+    linear-gradient(180deg, #05070d 0%, #0a1220 100%);
 }
 
 .silhouette {
-  filter: brightness(0) saturate(100%);
+  filter: brightness(0) invert(1);
+  opacity: 0.85;
 }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #2a3240; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #3a4456; }
+::-webkit-scrollbar-thumb { background: #2f4d74; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #4a7ab5; }
 
 button, input, .transition-all-smooth {
   transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -47,6 +32,6 @@ button:active:not(:disabled) {
 }
 
 *:focus-visible {
-  outline: 2px solid #ffcb05;
+  outline: 2px solid #4fd1ff;
   outline-offset: 2px;
 }

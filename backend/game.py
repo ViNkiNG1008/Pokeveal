@@ -120,9 +120,13 @@ def get_clue_value(pokemon: dict, clue_type: str):
         return pick["name"]
     if clue_type == "evolution_chain":
         chain = pokemon["evolution_chain"]
-        if len(chain) == 1:
+        stage = pokemon["evolution_stage"]
+        total = len(chain)
+        if total == 1:
             return "Does not evolve"
-        return " -> ".join(chain)
+        if stage == total:
+            return f"Final form — evolves through {total} stages total"
+        return f"Evolves through {total} stages total (this one is stage {stage})"
     if clue_type == "pokedex_entry":
         return pokemon["description"]
     if clue_type == "silhouette":
@@ -134,8 +138,35 @@ def normalize_guess(text: str) -> str:
     return text.strip().lower().replace(".", "").replace("'", "").replace(" ", "")
 
 
+def levenshtein_distance(a: str, b: str) -> int:
+    """Standard edit distance: how many single-character edits (insert/delete/
+    substitute) turn a into b. Used to tolerate small typos on guesses."""
+    if a == b:
+        return 0
+    if len(a) == 0:
+        return len(b)
+    if len(b) == 0:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        curr = [i] + [0] * len(b)
+        for j, cb in enumerate(b, 1):
+            cost = 0 if ca == cb else 1
+            curr[j] = min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost)
+        prev = curr
+    return prev[-1]
+
+
 def check_guess(pokemon: dict, guess: str) -> bool:
-    return normalize_guess(guess) == normalize_guess(pokemon["name"])
+    norm_guess = normalize_guess(guess)
+    norm_name = normalize_guess(pokemon["name"])
+    if not norm_guess:
+        return False
+    if norm_guess == norm_name:
+        return True
+    # Tolerate small typos: 1 character off for short names, 2 for longer ones.
+    max_dist = 1 if len(norm_name) <= 5 else 2
+    return levenshtein_distance(norm_guess, norm_name) <= max_dist
 
 
 ACHIEVEMENT_DEFS = [

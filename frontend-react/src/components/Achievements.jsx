@@ -1,3 +1,5 @@
+import { MedalIcon, LockIcon } from './icons.jsx'
+
 export default function Achievements({ state }) {
   const unlocked = new Set(state.achievements.unlocked)
 
@@ -14,14 +16,14 @@ export default function Achievements({ state }) {
             }`}
           >
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-sm flex-shrink-0 transition-transform duration-200 ${
-                got ? 'bg-gold' : 'bg-panelBorder'
+              className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 ${
+                got ? 'bg-gold text-screen' : 'bg-panelBorder text-muted'
               }`}
             >
-              {got ? '🏅' : '🔒'}
+              {got ? <MedalIcon className="w-4 h-4" /> : <LockIcon className="w-3.5 h-3.5" />}
             </div>
             <div>
-              <div className="font-bold text-[13px]">{a.label}</div>
+              <div className="font-bold text-[13px] text-text">{a.label}</div>
               <div className="text-[11px] text-muted">{a.desc}</div>
             </div>
           </div>

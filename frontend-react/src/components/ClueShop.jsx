@@ -1,3 +1,5 @@
+import { CLUE_ICONS } from './icons.jsx'
+
 const TIERS = ['cheap', 'medium', 'expensive', 'premium']
 const TIER_LABELS = { cheap: 'Cheap', medium: 'Medium', expensive: 'Expensive', premium: 'Premium' }
 
@@ -19,6 +21,7 @@ export default function ClueShop({ clueShop, round, onBuy }) {
             {entries.map(([key, info]) => {
               const owned = round.bought_clues.includes(key)
               const disabled = owned || info.cost > round.coins_remaining
+              const Icon = CLUE_ICONS[key]
               return (
                 <button
                   key={key}
@@ -34,7 +37,10 @@ export default function ClueShop({ clueShop, round, onBuy }) {
                       : 'hover:border-gold hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(255,203,5,0.15)] cursor-pointer active:translate-y-0'
                   }`}
                 >
-                  <span>{owned ? '✓ ' : ''}{info.label}</span>
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    {Icon && <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${owned ? 'text-phosphor' : 'text-gold/80'}`} />}
+                    <span className="truncate">{owned ? '✓ ' : ''}{info.label}</span>
+                  </span>
                   <span className="text-gold font-semibold whitespace-nowrap">{info.cost}c</span>
                 </button>
               )

@@ -1,3 +1,5 @@
+import { LockIcon, HourglassIcon, POKEBALL_IMG } from './icons.jsx'
+
 const REGIONS = [
   { key: 'kanto', label: 'Kanto', count: 151 },
   { key: 'johto', label: 'Johto', count: 100 },
@@ -19,7 +21,8 @@ export default function RegionGrid({ regionState, onPick }) {
         const playable = r.key === 'kanto'
         const unlocked = unlockedMap[r.key] ?? (r.key === 'kanto')
         const locked = !playable
-        const icon = !unlocked ? '🔒' : playable ? '▶' : '⏳'
+        const Icon = !unlocked ? LockIcon : HourglassIcon
+        const iconColor = !unlocked ? 'text-muted' : 'text-phosphorDim'
         return (
           <div
             key={r.key}
@@ -31,8 +34,14 @@ export default function RegionGrid({ regionState, onPick }) {
                 : 'hover:border-gold hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(255,203,5,0.15)] active:translate-y-0'
             }`}
           >
-            <div className="text-2xl transition-transform duration-200">{icon}</div>
-            <h3 className="text-xs mt-2 mb-1">{r.label}</h3>
+            <div className="w-9 h-9 mx-auto rounded-full bg-screen flex items-center justify-center transition-transform duration-200 overflow-hidden">
+              {playable ? (
+                <img src={POKEBALL_IMG} alt="" className="w-6 h-6 object-contain" />
+              ) : (
+                <Icon className={`w-4.5 h-4.5 ${iconColor}`} />
+              )}
+            </div>
+            <h3 className="text-xs mt-2 mb-1 text-text">{r.label}</h3>
             <div className="text-[11px] text-muted">{r.count} Pokemon</div>
           </div>
         )

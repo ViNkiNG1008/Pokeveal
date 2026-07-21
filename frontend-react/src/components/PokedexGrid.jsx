@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { PokeballIcon, CheckIcon, EyeIcon } from './icons.jsx'
 
 export default function PokedexGrid({ sessionId }) {
   const [entries, setEntries] = useState(null)
@@ -34,13 +35,20 @@ export default function PokedexGrid({ sessionId }) {
             <>
               <img src={e.sprite} className="w-14 h-14 object-contain [image-rendering:pixelated] mx-auto" />
               <div>{e.name}</div>
-              <div className="text-[9px] text-muted">
-                #{String(e.id).padStart(3, '0')} {e.correct ? '✓' : '👁'}
+              <div className="text-[9px] text-muted flex items-center justify-center gap-1">
+                #{String(e.id).padStart(3, '0')}
+                {e.correct ? (
+                  <CheckIcon className="w-2.5 h-2.5 text-gold" />
+                ) : (
+                  <EyeIcon className="w-2.5 h-2.5 text-phosphorDim" />
+                )}
               </div>
             </>
           ) : (
             <>
-              <div className="w-14 h-14 mx-auto flex items-center justify-center text-panelBorder text-xl">?</div>
+              <div className="w-14 h-14 mx-auto flex items-center justify-center text-panelBorder">
+                <PokeballIcon className="w-6 h-6" />
+              </div>
               <div className="text-[9px] text-muted">#{String(e.id).padStart(3, '0')}</div>
             </>
           )}
