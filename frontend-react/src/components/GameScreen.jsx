@@ -3,6 +3,8 @@ import ClueShop from './ClueShop.jsx'
 import { api } from '../api.js'
 import { POKEMON_NAMES } from '../pokemonNames.js'
 import { BatteryIcon, POKEBALL_IMG } from './icons.jsx'
+import RevealModal from './RevealModal.jsx'
+import DailyChallenge from './DailyChallenge.jsx'
 
 export default function GameScreen({ state, onStateUpdate, showCaught, toast }) {
   const [guessText, setGuessText] = useState('')
@@ -10,8 +12,14 @@ export default function GameScreen({ state, onStateUpdate, showCaught, toast }) 
   const [caption, setCaption] = useState(null)
   const [shake, setShake] = useState(false)
   const [suggestions, setSuggestions] = useState([])
+  const [pendingReveal, setPendingReveal] = useState(null)
+  const [guessLog, setGuessLog] = useState([])
 
   const { round, completed, clue_shop: clueShop, stats } = state
+
+  useEffect(() => {
+    setGuessLog([])
+  }, [round?.round_number])
 
 
  async function buyClue(clueType) {
@@ -45,30 +53,39 @@ export default function GameScreen({ state, onStateUpdate, showCaught, toast }) 
   }
 
   async function submitGuess() {
-  const guess = guessText.trim()
-  if (!guess) return
-  setFlashImg(null)
-  setCaption(null)
-  setSuggestions([])
-  try {
-    const r = await api.guess(guess)
+    const guess = guessText.trim()
+    if (!guess) return
+    setSuggestions([])
+    try {
+      const r = await api.guess(guess)
       setGuessText('')
       if (r.correct) {
-        setFlashImg(r.hires)
-        setCaption(`Caught! ${r.answer} — scored ${r.round_score} coins`)
-        toast(`Correct! ${r.answer} — +${r.round_score} score`)
-        ;(r.new_achievements || []).forEach((a, i) =>
-          setTimeout(() => toast(`🏅 Achievement unlocked: ${a.replace(/_/g, ' ')}`), 700 * (i + 1))
-        )
+        setPendingReveal({
+          answer: r.answer,
+          hires: r.hires,
+          roundScore: r.round_score,
+          newAchievements: r.new_achievements || [],
+          nextState: r.state,
+        })
       } else {
         setShake(true)
         setTimeout(() => setShake(false), 400)
+        setGuessLog((log) => [...log, { guess, feedback: r.feedback }])
         toast("Not quite — try another guess or buy a clue.")
+        onStateUpdate(r.state)
       }
-      onStateUpdate(r.state)
     } catch (e) {
       toast(e.message)
     }
+  }
+
+  function advanceRound() {
+    if (!pendingReveal) return
+    pendingReveal.newAchievements.forEach((a, i) =>
+      setTimeout(() => toast(`🏅 Achievement unlocked: ${a.replace(/_/g, ' ')}`), 700 * (i + 1))
+    )
+    onStateUpdate(pendingReveal.nextState)
+    setPendingReveal(null)
   }
 
   async function giveUp() {
@@ -118,10 +135,19 @@ export default function GameScreen({ state, onStateUpdate, showCaught, toast }) 
   const displayImg = flashImg || (showSilhouette ? round.clue_values.silhouette : null)
 
   return (
-    <div className="grid gap-4" style={{ gridTemplateColumns: '300px 1fr' }}>
+    <>
+    {pendingReveal && (
+      <RevealModal
+        answer={pendingReveal.answer}
+        image={pendingReveal.hires}
+        score={pendingReveal.roundScore}
+        onNext={advanceRound}
+      />
+    )}
+    <div className="grid gap-4" style={{ gridTemplateColumns: '260px 1fr 280px' }}>
       <div>
         {/* Pokedex viewfinder — cooler, darker glass-like panel */}
-        <div className="relative bg-gradient-to-b from-[#12253f] to-[#050d1a] border-2 border-phosphorDim/30 rounded-xl p-4 min-h-[300px] flex flex-col items-center justify-center overflow-hidden shadow-[inset_0_0_32px_rgba(0,0,0,0.55)] transition-shadow duration-300 hover:border-phosphorDim/50 hover:shadow-[inset_0_0_32px_rgba(0,0,0,0.55),0_0_16px_rgba(95,137,179,0.12)]">
+        <div className="relative bg-gradient-to-b from-[#12253f] to-[#050d1a] border-2 border-phosphorDim/30 rounded-xl p-4 min-h-[400px] flex flex-col items-center justify-center overflow-hidden shadow-[inset_0_0_32px_rgba(0,0,0,0.55)] transition-shadow duration-300 hover:border-phosphorDim/50 hover:shadow-[inset_0_0_32px_rgba(0,0,0,0.55),0_0_16px_rgba(95,137,179,0.12)]">
           {/* soft ambient glow blobs for a cool "dark blur" feel */}
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-phosphorDim/10 blur-2xl pointer-events-none" />
           <div className="absolute -bottom-14 -left-10 w-40 h-40 rounded-full bg-black/40 blur-2xl pointer-events-none" />
@@ -135,7 +161,7 @@ export default function GameScreen({ state, onStateUpdate, showCaught, toast }) 
           <span className="absolute bottom-2.5 right-2.5 w-4 h-4 border-b-2 border-r-2 border-phosphorDim/60 rounded-br-md" />
 
           {displayImg ? (
-            <div className="relative w-[200px] h-[200px] flex items-center justify-center">
+            <div className="relative w-[220px] h-[220px] flex items-center justify-center">
               <img
                 src={displayImg}
                 className={`w-full h-full object-contain [image-rendering:pixelated] transition-all duration-300 ${
@@ -156,49 +182,13 @@ export default function GameScreen({ state, onStateUpdate, showCaught, toast }) 
             <span className="w-1.5 h-1.5 rounded-full bg-phosphor/70" />
           </div>
         </div>
-
-        {/* Clue terminal log */}
-        <div className="bg-screen border border-panelBorder rounded-xl px-4 py-3.5 mt-3 min-h-[130px] max-h-[220px] overflow-y-auto text-[12.5px] leading-7 text-phosphor font-mono">
-          {round.bought_clues.length === 0 ? (
-            <div className="text-phosphorDim">&gt; awaiting clue purchase...</div>
-          ) : (
-            round.bought_clues.map((c, i) => {
-              const info = clueShop[c]
-              let val = round.clue_values[c]
-              if (c === 'silhouette') val = '(shown above)'
-              if (c === 'pokedex_entry') val = `"${val}"`
-              return (
-                <div
-                  key={c}
-                  className="whitespace-pre-wrap break-words animate-slideDown"
-                  style={{ animationDelay: `${i * 40}ms`, animationFillMode: 'backwards' }}
-                >
-                  <span className="text-phosphorDim">&gt;</span> {info ? info.label : c}: {val}
-                </div>
-              )
-            })
-          )}
-        </div>
-
-        {round.wrong_guesses.length > 0 && (
-          <div className="flex gap-1.5 flex-wrap mt-2">
-            {round.wrong_guesses.map((g, i) => (
-              <span
-                key={i}
-                className="bg-danger/10 text-danger border border-danger/35 rounded px-2 py-0.5 text-[11px] animate-popIn"
-              >
-                {g}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       <div className="flex flex-col gap-3.5">
         <ClueShop clueShop={clueShop} round={round} onBuy={buyClue} />
 
-        <div className="bg-phosphorDim/10 border border-phosphorDim/25 rounded-2xl p-3">
-          <div className={`flex gap-2 items-stretch ${shake ? 'animate-wiggle' : ''}`}>
+        <div className="bg-phosphorDim/10 border border-phosphorDim/25 rounded-2xl p-3.5">
+          <div className={`flex gap-2.5 items-stretch ${shake ? 'animate-wiggle' : ''}`}>
             <div className="relative flex-1">
               <input
                 value={guessText}
@@ -225,16 +215,13 @@ export default function GameScreen({ state, onStateUpdate, showCaught, toast }) 
               )}
             </div>
 
-            <div className="hidden sm:flex w-11 h-11 items-center justify-center flex-shrink-0 self-center drop-shadow-[0_0_10px_rgba(227,53,13,0.35)]">
-              <img src={POKEBALL_IMG} alt="" className="w-10 h-10 object-contain" />
-            </div>
-
             <button
-              onClick={submitGuess}
-              className="bg-red hover:bg-[#ff5230] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(227,53,13,0.35)] text-white rounded-lg px-5 py-2.5 text-sm font-mono font-bold uppercase tracking-wide transition-all duration-150"
-            >
-              Guess
-            </button>
+  onClick={submitGuess}
+  className="flex items-center gap-2 bg-red hover:bg-[#ff5230] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(227,53,13,0.35)] text-white rounded-lg px-5 py-2.5 text-sm font-mono font-bold uppercase tracking-wide transition-all duration-150"
+>
+  <img src={POKEBALL_IMG} alt="" className="w-5 h-5 object-contain" />
+  Guess
+</button>
           </div>
           <div className="flex justify-between items-center mt-2">
             <button
@@ -252,6 +239,59 @@ export default function GameScreen({ state, onStateUpdate, showCaught, toast }) 
           </div>
         </div>
       </div>
+
+      <div className="flex flex-col gap-3.5">
+        {/* Purchased Clues */}
+        <div className="bg-panel border border-panelBorder rounded-xl px-4 py-3.5 min-h-[130px] max-h-[220px] overflow-y-auto text-[12.5px] leading-7 text-text">
+          <div className="text-[10px] uppercase tracking-wider text-muted font-pixel mb-2">Purchased Clues</div>
+          {round.bought_clues.length === 0 ? (
+            <div className="text-muted text-[12px]">No clues purchased yet — buy one from the shop to get started.</div>
+          ) : (
+            round.bought_clues.map((c, i) => {
+              const info = clueShop[c]
+              let val = round.clue_values[c]
+              if (c === 'silhouette') val = '(shown above)'
+              if (c === 'pokedex_entry') val = `"${val}"`
+              return (
+                <div
+                  key={c}
+                  className="flex gap-1.5 items-baseline animate-slideDown"
+                  style={{ animationDelay: `${i * 40}ms`, animationFillMode: 'backwards' }}
+                >
+                  <span className="text-phosphor">✓</span>
+                  <span>{info ? info.label : c}: {val}</span>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Your Guesses (with hot/cold feedback) */}
+        {guessLog.length > 0 && (
+          <div className="bg-panel border border-panelBorder rounded-xl px-4 py-3">
+            <div className="text-[10px] uppercase tracking-wider text-muted font-pixel mb-2">Your Guesses</div>
+            <div className="flex flex-col gap-2">
+              {guessLog.map((entry, i) => (
+                <div key={i} className="text-[12.5px] animate-popIn">
+                  <div className="text-danger">❌ {entry.guess}</div>
+                  {entry.feedback && (
+                    <div className="ml-5 mt-1 text-[11px] text-muted space-y-0.5">
+                      <div>Type Match: <span className={entry.feedback.type_match ? 'text-phosphor' : 'text-danger'}>{entry.feedback.type_match ? '✓' : '✗'}</span></div>
+                      <div>Generation Match: <span className={entry.feedback.generation_match ? 'text-phosphor' : 'text-danger'}>{entry.feedback.generation_match ? '✓' : '✗'}</span></div>
+                      {entry.feedback.weight_similarity !== null && (
+                        <div>Weight Similarity: <span className="text-gold">{entry.feedback.weight_similarity}%</span></div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <DailyChallenge dc={state.daily_challenge} />
+      </div>
     </div>
+    </>
   )
 }

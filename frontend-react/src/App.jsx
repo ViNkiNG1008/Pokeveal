@@ -10,6 +10,7 @@ import Achievements from './components/Achievements.jsx'
 import Leaderboard from './components/Leaderboard.jsx'
 import Login from './components/Login.jsx'
 import Toast from './components/Toast.jsx'
+import TrainerCard from './components/TrainerCard.jsx'
 
 export default function App() {
   const [username, setUsername] = useState(null)
@@ -17,6 +18,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('game')
   const [toasts, setToasts] = useState([])
+  const [showTrainerCard, setShowTrainerCard] = useState(false)
 
   const showToast = useCallback((message) => {
     const id = Math.random().toString(36).slice(2)
@@ -98,7 +100,7 @@ export default function App() {
   <div className="flex items-center gap-4">
     <StatsBar state={state} />
     <div className="flex items-center gap-2 text-[12px] text-muted">
-      <UserAvatar username={username} />
+      <UserAvatar username={username} onClick={() => setShowTrainerCard(true)} />
       <span>{username}</span>
       <button onClick={logout} className="underline hover:text-gold">Log out</button>
     </div>
@@ -136,6 +138,15 @@ export default function App() {
           <Toast key={t.id} message={t.message} onDone={() => dismissToast(t.id)} />
         ))}
       </div>
+
+      {showTrainerCard && state && (
+        <TrainerCard
+          username={username}
+          stats={state.stats}
+          region={state.region}
+          onClose={() => setShowTrainerCard(false)}
+        />
+      )}
     </div>
   )
 }

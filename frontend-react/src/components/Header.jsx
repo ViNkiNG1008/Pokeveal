@@ -25,11 +25,12 @@ export function StatsBar({ state }) {
   )
 }
 
-export function UserAvatar({ username, className = '' }) {
+export function UserAvatar({ username, className = '', onClick }) {
   const initial = username ? username.charAt(0).toUpperCase() : '?'
   return (
     <div
-      className={`w-8 h-8 rounded-full flex items-center justify-center font-pixel text-xs font-semibold text-white flex-shrink-0 border border-panelBorder shadow-inner ${className}`}
+      onClick={onClick}
+      className={`w-8 h-8 rounded-full flex items-center justify-center font-pixel text-xs font-semibold text-white flex-shrink-0 border border-panelBorder shadow-inner ${onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_0_10px_rgba(255,203,5,0.4)] transition-all duration-150' : ''} ${className}`}
       style={{ background: 'linear-gradient(135deg, #e3350d, #f4b400)' }}
     >
       {initial}
@@ -39,19 +40,36 @@ export function UserAvatar({ username, className = '' }) {
 
 function Chip({ icon: Icon, imgIcon, label, value, color }) {
   const [pop, setPop] = useState(false)
+  const [delta, setDelta] = useState(null)
   const prev = useRef(value)
 
   useEffect(() => {
     if (prev.current !== value) {
       setPop(true)
+      if (label === 'Coins' && typeof value === 'number' && typeof prev.current === 'number') {
+        const diff = value - prev.current
+        if (diff !== 0) {
+          const id = Math.random().toString(36).slice(2)
+          setDelta({ id, diff })
+          setTimeout(() => setDelta((d) => (d && d.id === id ? null : d)), 700)
+        }
+      }
       prev.current = value
       const t = setTimeout(() => setPop(false), 350)
       return () => clearTimeout(t)
     }
-  }, [value])
+  }, [value, label])
 
   return (
-    <div className="bg-panel border border-panelBorder rounded-xl px-3 py-2 flex items-center gap-2.5 min-w-[104px] transition-all duration-200 hover:border-muted hover:-translate-y-0.5">
+    <div className="relative bg-panel border border-panelBorder rounded-xl px-3 py-2 flex items-center gap-2.5 min-w-[104px] transition-all duration-200 hover:border-muted hover:-translate-y-0.5">
+      {delta && (
+        <span
+          key={delta.id}
+          className={`absolute -top-2 right-2 text-[11px] font-pixel font-bold animate-floatUp pointer-events-none ${delta.diff < 0 ? 'text-danger' : 'text-phosphor'}`}
+        >
+          {delta.diff > 0 ? `+${delta.diff}` : delta.diff}
+        </span>
+      )}
       <span className="w-6 h-6 rounded-lg bg-screen flex items-center justify-center flex-shrink-0 text-phosphorDim overflow-hidden">
         {imgIcon ? <img src={imgIcon} alt="" className="w-4 h-4 object-contain" /> : Icon && <Icon className="w-3.5 h-3.5" />}
       </span>

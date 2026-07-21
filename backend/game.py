@@ -134,6 +134,27 @@ def get_clue_value(pokemon: dict, clue_type: str):
     raise ValueError(f"Unknown clue type: {clue_type}")
 
 
+POKEMON_BY_NORM_NAME = {}
+for _p in POKEMON:
+    POKEMON_BY_NORM_NAME[_p["name"].strip().lower().replace(".", "").replace("'", "").replace(" ", "")] = _p
+
+
+def guess_feedback(guessed_pokemon: dict, answer: dict) -> dict:
+    """Hot/cold comparison between a wrongly-guessed (but real) Pokemon and the answer."""
+    type_match = bool(set(guessed_pokemon["types"]) & set(answer["types"]))
+    gen_match = True  # Kanto-only MVP: all Gen I, kept for future multi-region use
+    aw, gw = answer["weight_kg"], guessed_pokemon["weight_kg"]
+    if aw and gw:
+        weight_similarity = round(max(0, 100 - (abs(aw - gw) / max(aw, gw)) * 100))
+    else:
+        weight_similarity = None
+    return {
+        "type_match": type_match,
+        "generation_match": gen_match,
+        "weight_similarity": weight_similarity,
+    }
+
+
 def normalize_guess(text: str) -> str:
     return text.strip().lower().replace(".", "").replace("'", "").replace(" ", "")
 

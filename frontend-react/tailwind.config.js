@@ -54,6 +54,10 @@ export default {
           '0%': { transform: 'rotate(0deg)' },
           '100%': { transform: 'rotate(360deg)' },
         },
+        floatUp: {
+          '0%': { transform: 'translateY(0)', opacity: 1 },
+          '100%': { transform: 'translateY(-18px)', opacity: 0 },
+        },
       },
       animation: {
         flash: 'flash 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -63,6 +67,7 @@ export default {
         coinPop: 'coinPop 0.35s ease-out',
         wiggle: 'wiggle 0.4s ease-in-out',
         spinSlow: 'spinSlow 6s linear infinite',
+        floatUp: 'floatUp 0.7s ease-out forwards',
       },
     },
   },

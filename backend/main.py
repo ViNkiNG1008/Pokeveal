@@ -87,6 +87,20 @@ def default_region_unlocks() -> dict:
     return {r["key"]: r["unlocked_by_default"] for r in game.REGIONS}
 
 
+def today_str() -> str:
+    return time.strftime("%Y-%m-%d", time.gmtime())
+
+
+def new_daily_challenge() -> dict:
+    return {"date": today_str(), "target": 5, "reward": 50, "progress": 0, "claimed": False}
+
+
+def ensure_daily_challenge(state: dict) -> None:
+    dc = state.get("daily_challenge")
+    if dc is None or dc.get("date") != today_str():
+        state["daily_challenge"] = new_daily_challenge()
+
+
 def start_round(state: dict) -> None:
     round_number = state["current_index"] + 1
     state["round"] = {
@@ -116,11 +130,14 @@ def new_game_state(region: str) -> dict:
             "fastest_guess_seconds": None,
             "last_round_clue_count": None,
             "last_round_correct": None,
+            "current_streak": 0,
+            "best_streak": 0,
         },
         "achievements": [],
         "region_unlocks": default_region_unlocks(),
         "completed": False,
     }
+    state["daily_challenge"] = new_daily_challenge()
     start_round(state)
     return state
 
@@ -132,6 +149,7 @@ def current_pokemon(state: dict) -> dict:
 
 def public_state(state: dict) -> dict:
     """State view safe to send to the client (no hidden answer)."""
+    ensure_daily_challenge(state)
     total = game.TOTAL_KANTO
     collected = sum(1 for v in state["pokedex"].values() if v["collected"])
     completed = state["completed"]
@@ -170,6 +188,7 @@ def public_state(state: dict) -> dict:
             {**r, "unlocked": state["region_unlocks"].get(r["key"], False)}
             for r in game.REGIONS
         ],
+        "daily_challenge": state["daily_challenge"],
     }
 
 
@@ -191,9 +210,17 @@ def finish_round(state: dict, correct: bool, revealed: bool):
         stats["total_score"] += round_score
         stats["correct_guesses"] += 1
         stats["best_round_score"] = max(stats["best_round_score"], round_score)
+        stats["current_streak"] = stats.get("current_streak", 0) + 1
+        stats["best_streak"] = max(stats.get("best_streak", 0), stats["current_streak"])
         duration = time.time() - rnd["start_time"]
         if stats["fastest_guess_seconds"] is None or duration < stats["fastest_guess_seconds"]:
             stats["fastest_guess_seconds"] = round(duration, 1)
+        ensure_daily_challenge(state)
+        dc = state["daily_challenge"]
+        if dc["progress"] < dc["target"]:
+            dc["progress"] += 1
+    else:
+        stats["current_streak"] = 0
     if revealed:
         stats["revealed_count"] += 1
 
@@ -364,8 +391,13 @@ def guess(req: GuessRequest, user: dict = Depends(auth.get_current_user)):
         }
     else:
         state["round"]["wrong_guesses"].append(req.guess.strip())
+        feedback = None
+        norm = game.normalize_guess(req.guess)
+        guessed_pokemon = game.POKEMON_BY_NORM_NAME.get(norm)
+        if guessed_pokemon:
+            feedback = game.guess_feedback(guessed_pokemon, pkmn)
         save_state(user["user_id"], state)
-        return {"correct": False, "state": public_state(state)}
+        return {"correct": False, "feedback": feedback, "state": public_state(state)}
 
 
 @app.post("/api/game/reveal")
