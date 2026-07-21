@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { api } from '../api.js'
 import { PokeballIcon, CheckIcon, EyeIcon } from './icons.jsx'
 
-export default function PokedexGrid({ sessionId }) {
+export default function PokedexGrid() {
   const [entries, setEntries] = useState(null)
 
   useEffect(() => {
-    api.getPokedex(sessionId).then((r) => setEntries(r.entries))
-  }, [sessionId])
+    api.pokedex().then((r) => setEntries(r.entries))
+  }, [])
 
   if (!entries) {
     return (

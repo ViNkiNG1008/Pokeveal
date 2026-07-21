@@ -4,7 +4,7 @@ import { api } from '../api.js'
 import { POKEMON_NAMES } from '../pokemonNames.js'
 import { BatteryIcon, POKEBALL_IMG } from './icons.jsx'
 
-export default function GameScreen({ state, sessionId, onStateUpdate, showCaught, toast }) {
+export default function GameScreen({ state, onStateUpdate, showCaught, toast }) {
   const [guessText, setGuessText] = useState('')
   const [flashImg, setFlashImg] = useState(null)
   const [caption, setCaption] = useState(null)
@@ -18,8 +18,8 @@ export default function GameScreen({ state, sessionId, onStateUpdate, showCaught
   setFlashImg(null)
   setCaption(null)
   try {
-    await api.buyClue(sessionId, clueType)
-    const fresh = await api.getState(sessionId)
+    await api.buyClue(clueType)
+    const fresh = await api.getState()
     onStateUpdate(fresh)
   } catch (e) {
     toast(e.message)
@@ -51,7 +51,7 @@ export default function GameScreen({ state, sessionId, onStateUpdate, showCaught
   setCaption(null)
   setSuggestions([])
   try {
-    const r = await api.guess(sessionId, guess)
+    const r = await api.guess(guess)
       setGuessText('')
       if (r.correct) {
         setFlashImg(r.hires)
@@ -75,7 +75,7 @@ export default function GameScreen({ state, sessionId, onStateUpdate, showCaught
     setFlashImg(null)
     setCaption(null)
     try {
-      const r = await api.reveal(sessionId)
+      const r = await api.reveal()
       setFlashImg(r.sprite)
       setCaption(`It was ${r.answer}! (0 coins — no penalty)`)
       toast(`It was ${r.answer}!`)
@@ -90,8 +90,7 @@ export default function GameScreen({ state, sessionId, onStateUpdate, showCaught
 
   async function resetSave() {
     if (!confirm('Reset your PokeVeal save? This clears all progress.')) return
-    await api.deleteGame(sessionId)
-    localStorage.removeItem('pokeveal_session')
+    await api.deleteGame()
     location.reload()
   }
 

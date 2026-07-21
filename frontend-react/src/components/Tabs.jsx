@@ -4,8 +4,8 @@ const TABS = [
   { key: 'stats', label: 'Stats' },
   { key: 'achievements', label: 'Achievements' },
   { key: 'regions', label: 'Regions' },
+  { key: 'leaderboard', label: 'Leaderboard' },
 ]
-
 export default function Tabs({ active, onChange }) {
   return (
     <nav className="flex gap-1.5 flex-wrap mb-4">

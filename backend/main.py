@@ -8,9 +8,9 @@ Serves:
   - REST API under /api/*
   - The static frontend (frontend/index.html) at /
 
-State is persisted in a local SQLite file (pokeveal.db) so a browser
-refresh (or restarting the server) continues the same game, per the
-"Save System" in the design doc.
+State is persisted in a local SQLite file (pokeveal.db). Game saves are
+now tied to a logged-in user (JWT auth) instead of an anonymous
+session_id, so login is required before playing.
 """
 import json
 import sqlite3
@@ -19,11 +19,12 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 import game
+import auth
 
 BASE_DIR = Path(__file__).parent
 DB_PATH = BASE_DIR / "pokeveal.db"
@@ -45,7 +46,7 @@ def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
         """CREATE TABLE IF NOT EXISTS sessions (
-            session_id TEXT PRIMARY KEY,
+            user_id TEXT PRIMARY KEY,
             state TEXT NOT NULL,
             updated_at REAL NOT NULL
         )"""
@@ -53,25 +54,25 @@ def get_conn():
     return conn
 
 
-def load_state(session_id: str) -> Optional[dict]:
+def load_state(user_id: str) -> Optional[dict]:
     conn = get_conn()
     try:
         row = conn.execute(
-            "SELECT state FROM sessions WHERE session_id = ?", (session_id,)
+            "SELECT state FROM sessions WHERE user_id = ?", (user_id,)
         ).fetchone()
         return json.loads(row[0]) if row else None
     finally:
         conn.close()
 
 
-def save_state(session_id: str, state: dict) -> None:
+def save_state(user_id: str, state: dict) -> None:
     conn = get_conn()
     try:
         conn.execute(
-            """INSERT INTO sessions (session_id, state, updated_at)
+            """INSERT INTO sessions (user_id, state, updated_at)
                VALUES (?, ?, ?)
-               ON CONFLICT(session_id) DO UPDATE SET state=excluded.state, updated_at=excluded.updated_at""",
-            (session_id, json.dumps(state), time.time()),
+               ON CONFLICT(user_id) DO UPDATE SET state=excluded.state, updated_at=excluded.updated_at""",
+            (user_id, json.dumps(state), time.time()),
         )
         conn.commit()
     finally:
@@ -225,8 +226,34 @@ def finish_round(state: dict, correct: bool, revealed: bool):
 # API models
 # --------------------------------------------------------------------------
 
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
+    @field_validator("username")
+    @classmethod
+    def username_valid(cls, v):
+        v = v.strip()
+        if len(v) < 3 or len(v) > 20:
+            raise ValueError("Username must be 3-20 characters.")
+        if not v.replace("_", "").isalnum():
+            raise ValueError("Username can only contain letters, numbers, and underscores.")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def password_valid(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters.")
+        return v
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 class NewGameRequest(BaseModel):
-    session_id: str
     region: str = "kanto"
 
 
@@ -239,36 +266,59 @@ class GuessRequest(BaseModel):
 
 
 # --------------------------------------------------------------------------
-# Routes
+# Auth routes
 # --------------------------------------------------------------------------
 
-@app.post("/api/session")
-def create_session():
-    return {"session_id": str(uuid.uuid4())}
+@app.post("/api/auth/register")
+def register(req: RegisterRequest):
+    if auth.username_taken(req.username):
+        raise HTTPException(400, "Username already taken.")
+    user_id = str(uuid.uuid4())
+    auth.create_user(user_id, req.username, req.password)
+    token = auth.create_token(user_id, req.username)
+    return {"token": token, "username": req.username}
 
+
+@app.post("/api/auth/login")
+def login(req: LoginRequest):
+    user = auth.get_user_by_username(req.username)
+    if user is None or not auth.verify_password(req.password, user["password_hash"]):
+        raise HTTPException(401, "Incorrect username or password.")
+    token = auth.create_token(user["user_id"], user["username"])
+    return {"token": token, "username": user["username"]}
+
+
+@app.get("/api/auth/me")
+def me(user: dict = Depends(auth.get_current_user)):
+    return {"username": user["username"]}
+
+
+# --------------------------------------------------------------------------
+# Game routes (all require a logged-in user)
+# --------------------------------------------------------------------------
 
 @app.post("/api/game/new")
-def new_game(req: NewGameRequest):
+def new_game(req: NewGameRequest, user: dict = Depends(auth.get_current_user)):
     if req.region not in game.PLAYABLE_REGIONS:
         raise HTTPException(400, f"Region '{req.region}' is not playable yet.")
     state = new_game_state(req.region)
-    save_state(req.session_id, state)
+    save_state(user["user_id"], state)
     return public_state(state)
 
 
-@app.get("/api/game/{session_id}/state")
-def get_state(session_id: str):
-    state = load_state(session_id)
+@app.get("/api/game/state")
+def get_state(user: dict = Depends(auth.get_current_user)):
+    state = load_state(user["user_id"])
     if state is None:
-        raise HTTPException(404, "No saved game for this session. Start a new game.")
+        raise HTTPException(404, "No saved game. Start a new game.")
     return public_state(state)
 
 
-@app.post("/api/game/{session_id}/buy-clue")
-def buy_clue(session_id: str, req: BuyClueRequest):
-    state = load_state(session_id)
+@app.post("/api/game/buy-clue")
+def buy_clue(req: BuyClueRequest, user: dict = Depends(auth.get_current_user)):
+    state = load_state(user["user_id"])
     if state is None:
-        raise HTTPException(404, "No saved game for this session.")
+        raise HTTPException(404, "No saved game.")
     if state["completed"]:
         raise HTTPException(400, "Region already completed.")
     if req.clue_type not in game.CLUE_SHOP:
@@ -283,7 +333,7 @@ def buy_clue(session_id: str, req: BuyClueRequest):
     rnd["bought_clues"].append(req.clue_type)
     usage = state["stats"]["clue_usage"]
     usage[req.clue_type] = usage.get(req.clue_type, 0) + 1
-    save_state(session_id, state)
+    save_state(user["user_id"], state)
     pkmn = current_pokemon(state)
     return {
         "clue_type": req.clue_type,
@@ -292,18 +342,18 @@ def buy_clue(session_id: str, req: BuyClueRequest):
     }
 
 
-@app.post("/api/game/{session_id}/guess")
-def guess(session_id: str, req: GuessRequest):
-    state = load_state(session_id)
+@app.post("/api/game/guess")
+def guess(req: GuessRequest, user: dict = Depends(auth.get_current_user)):
+    state = load_state(user["user_id"])
     if state is None:
-        raise HTTPException(404, "No saved game for this session.")
+        raise HTTPException(404, "No saved game.")
     if state["completed"]:
         raise HTTPException(400, "Region already completed.")
     pkmn = current_pokemon(state)
     correct = game.check_guess(pkmn, req.guess)
     if correct:
         round_score, new_achievements = finish_round(state, correct=True, revealed=False)
-        save_state(session_id, state)
+        save_state(user["user_id"], state)
         return {
             "correct": True,
             "answer": pkmn["name"],
@@ -314,20 +364,20 @@ def guess(session_id: str, req: GuessRequest):
         }
     else:
         state["round"]["wrong_guesses"].append(req.guess.strip())
-        save_state(session_id, state)
+        save_state(user["user_id"], state)
         return {"correct": False, "state": public_state(state)}
 
 
-@app.post("/api/game/{session_id}/reveal")
-def reveal(session_id: str):
-    state = load_state(session_id)
+@app.post("/api/game/reveal")
+def reveal(user: dict = Depends(auth.get_current_user)):
+    state = load_state(user["user_id"])
     if state is None:
-        raise HTTPException(404, "No saved game for this session.")
+        raise HTTPException(404, "No saved game.")
     if state["completed"]:
         raise HTTPException(400, "Region already completed.")
     pkmn = current_pokemon(state)
     round_score, new_achievements = finish_round(state, correct=False, revealed=True)
-    save_state(session_id, state)
+    save_state(user["user_id"], state)
     return {
         "answer": pkmn["name"],
         "sprite": pkmn["sprite"],
@@ -337,11 +387,11 @@ def reveal(session_id: str):
     }
 
 
-@app.get("/api/game/{session_id}/pokedex")
-def pokedex(session_id: str):
-    state = load_state(session_id)
+@app.get("/api/game/pokedex")
+def pokedex(user: dict = Depends(auth.get_current_user)):
+    state = load_state(user["user_id"])
     if state is None:
-        raise HTTPException(404, "No saved game for this session.")
+        raise HTTPException(404, "No saved game.")
     all_entries = []
     for p in game.POKEMON:
         entry = state["pokedex"].get(str(p["id"]))
@@ -355,11 +405,11 @@ def pokedex(session_id: str):
     return {"entries": all_entries}
 
 
-@app.delete("/api/game/{session_id}")
-def delete_game(session_id: str):
+@app.delete("/api/game")
+def delete_game(user: dict = Depends(auth.get_current_user)):
     conn = get_conn()
     try:
-        conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
+        conn.execute("DELETE FROM sessions WHERE user_id = ?", (user["user_id"],))
         conn.commit()
     finally:
         conn.close()
@@ -367,7 +417,49 @@ def delete_game(session_id: str):
 
 
 # --------------------------------------------------------------------------
-# Root info route (React frontend runs separately via `npm run dev`)
+# Leaderboard
+# --------------------------------------------------------------------------
+
+@app.get("/api/leaderboard")
+def leaderboard(sort_by: str = "total_score"):
+    """
+    Global leaderboard across all users. sort_by can be:
+    total_score | best_round_score | completion_pct | total_caught
+    """
+    valid_sorts = {"total_score", "best_round_score", "completion_pct", "total_caught"}
+    if sort_by not in valid_sorts:
+        raise HTTPException(400, f"sort_by must be one of {valid_sorts}")
+
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        rows = conn.execute(
+            """SELECT u.username, s.state
+               FROM sessions s
+               JOIN users u ON u.user_id = s.user_id"""
+        ).fetchall()
+    finally:
+        conn.close()
+
+    entries = []
+    for username, state_json in rows:
+        state = json.loads(state_json)
+        stats = state["stats"]
+        collected = sum(1 for v in state["pokedex"].values() if v["collected"])
+        total = game.TOTAL_KANTO
+        entries.append({
+            "username": username,
+            "total_score": stats["total_score"],
+            "best_round_score": stats["best_round_score"],
+            "total_caught": stats["correct_guesses"],
+            "completion_pct": round(100 * collected / total, 1) if total else 0,
+        })
+
+    entries.sort(key=lambda e: e[sort_by], reverse=True)
+    return {"sort_by": sort_by, "entries": entries}
+
+
+# --------------------------------------------------------------------------
+# Root info route
 # --------------------------------------------------------------------------
 
 @app.get("/")
