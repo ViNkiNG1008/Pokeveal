@@ -16,6 +16,7 @@ import json
 import sqlite3
 import time
 import uuid
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -27,7 +28,7 @@ import game
 import auth
 
 BASE_DIR = Path(__file__).parent
-DB_PATH = BASE_DIR / "pokeveal.db"
+DB_PATH = Path(os.environ.get("DB_PATH", str(BASE_DIR / "pokeveal.db")))
 
 app = FastAPI(title="PokeVeal API")
 app.add_middleware(
@@ -36,7 +37,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # --------------------------------------------------------------------------
 # Persistence

@@ -7,6 +7,7 @@ can be swapped later without touching game routes.
 """
 import sqlite3
 import time
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -15,10 +16,9 @@ from passlib.context import CryptContext
 from fastapi import HTTPException, Header
 
 BASE_DIR = Path(__file__).parent
-DB_PATH = BASE_DIR / "pokeveal.db"
+DB_PATH = Path(os.environ.get("DB_PATH", str(BASE_DIR / "pokeveal.db")))
 
-# In a real deployment, load this from an environment variable instead.
-JWT_SECRET = "change-this-secret-in-production"
+JWT_SECRET = os.environ.get("JWT_SECRET", "change-this-secret-in-production")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_SECONDS = 60 * 60 * 24 * 30  # 30 days
 
