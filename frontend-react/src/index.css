@@ -77,3 +77,41 @@ button:active:not(:disabled) {
   outline: 2px solid #4fd1ff;
   outline-offset: 2px;
 }
+
+/* ------------------------------------------------------------------ */
+/* Mobile phone adjustments (max-width: 640px)                        */
+/* ------------------------------------------------------------------ */
+@media (max-width: 640px) {
+  body {
+    /* fixed backgrounds cause jank/repaint issues on mobile Safari & Chrome */
+    background-attachment: scroll;
+  }
+
+  html, body, #root {
+    /* allow natural scrolling on small screens, avoid iOS viewport bugs */
+    height: auto;
+    min-height: 100%;
+    max-height: none;
+  }
+
+  .bubbly-logo {
+    -webkit-text-stroke: 2px #0a1124;
+    text-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.7),
+      0 1px 0 #0a1124,
+      -1px -1px 0 #0a1124,
+      1px -1px 0 #0a1124,
+      -1px 1px 0 #0a1124,
+      1px 1px 0 #0a1124;
+  }
+
+  /* bigger tap targets on touch devices */
+  button, input {
+    min-height: 44px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
