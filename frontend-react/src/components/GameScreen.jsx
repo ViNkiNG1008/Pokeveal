@@ -149,7 +149,7 @@ export default function GameScreen({ state, onStateUpdate, showCaught, toast }) 
       )}
 
       {/* Main 3-column responsive layout strictly locked inside viewport frame */}
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr_340px] gap-4 sm:gap-5 my-1 flex-1 min-h-0 h-full overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr_340px] gap-4 sm:gap-5 my-1 flex-1 min-h-0 lg:h-full overflow-y-auto lg:overflow-hidden">
 
         {/* Left Column — Pokédex Viewfinder */}
         <div className="bg-black/40 border border-white/10 rounded-2xl p-4 h-full min-h-[360px] flex flex-col items-center justify-center relative overflow-hidden shadow-[inset_0_0_35px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-md">
