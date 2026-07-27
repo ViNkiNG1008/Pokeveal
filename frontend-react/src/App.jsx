@@ -204,22 +204,22 @@ export default function App() {
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-pixel">Want more?</span>
               <div className="flex items-center gap-1.5">
-                <a href="https://fintrack.app" target="_blank" rel="noreferrer"
+                <a href="fintrack-finatic.streamlit.app" target="_blank" rel="noreferrer"
                   className="w-7 h-7 rounded-full bg-slate-800/90 border border-slate-700/60 flex items-center justify-center text-emerald-400 hover:scale-110 transition-all" title="FinTrack">
                   <WalletIcon className="w-3.5 h-3.5" />
                 </a>
-                <a href="https://carewise.app" target="_blank" rel="noreferrer"
+                <a href="#" target="_blank" rel="noreferrer"
                   className="w-7 h-7 rounded-full bg-slate-800/90 border border-slate-700/60 flex items-center justify-center text-cyan-400 hover:scale-110 transition-all" title="CareWise">
                   <HeartIcon className="w-3.5 h-3.5" />
                 </a>
-                <a href="https://github.com" target="_blank" rel="noreferrer"
+                <a href="https://github.com/ViNkiNG1008/Pokeveal" target="_blank" rel="noreferrer"
                   className="w-7 h-7 rounded-full bg-slate-800/90 border border-slate-700/60 flex items-center justify-center text-purple-400 hover:scale-110 transition-all" title="GitHub">
                   <CodeIcon className="w-3.5 h-3.5" />
                 </a>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              <a href="https://github.com" target="_blank" rel="noreferrer"
+              <a href="https://github.com/ViNkiNG1008/Pokeveal" target="_blank" rel="noreferrer"
                 className="w-7 h-7 rounded-full bg-[#0a1124]/80 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:scale-110 transition-all" title="GitHub">
                 <GithubIcon className="w-3.5 h-3.5" />
               </a>
