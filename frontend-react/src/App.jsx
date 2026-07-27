@@ -204,7 +204,7 @@ export default function App() {
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-pixel">Want more?</span>
               <div className="flex items-center gap-1.5">
-                <a href="fintrack-finatic.streamlit.app" target="_blank" rel="noreferrer"
+                <a href="https://fintrack-finatic.streamlit.app" target="_blank" rel="noreferrer"
                   className="w-7 h-7 rounded-full bg-slate-800/90 border border-slate-700/60 flex items-center justify-center text-emerald-400 hover:scale-110 transition-all" title="FinTrack">
                   <WalletIcon className="w-3.5 h-3.5" />
                 </a>
