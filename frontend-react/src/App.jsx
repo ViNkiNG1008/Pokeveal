@@ -238,9 +238,9 @@ export default function App() {
         /* In-game: no wrapper — content floats directly over wallpaper */
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Top bar: glass pill header row */}
-          <div className="flex justify-between items-center gap-4 mb-1 shrink-0 bg-black/30 backdrop-blur-md rounded-2xl px-4 py-2 border border-white/10">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-1 shrink-0 bg-black/30 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/10">
             <Header state={state} />
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <StatsBar state={state} />
               <div className="flex items-center gap-2 text-[12px] text-white/80">
                 <UserAvatar username={username} onClick={() => setShowTrainerCard(true)} />
