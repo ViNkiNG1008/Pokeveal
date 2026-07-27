@@ -3,11 +3,11 @@ import { CoinIcon, BookIcon, POKEBALL_IMG } from './icons.jsx'
 
 export default function Header({ state }) {
   return (
-    <header className="flex items-center gap-3 mb-5">
-      <img src={POKEBALL_IMG} alt="" className="w-9 h-9 drop-shadow-[0_0_10px_rgba(227,53,13,0.5)]" />
+    <header className="flex items-center gap-3">
+      <img src={POKEBALL_IMG} alt="" className="w-8 h-8 drop-shadow-[0_0_10px_rgba(227,53,13,0.5)]" />
       <div>
-        <h1 className="font-pixel font-semibold text-lg tracking-wide text-text">POKÉVEAL</h1>
-        <div className="text-muted text-[11px] mt-0.5">reveal clues · save coins · catch them all</div>
+        <h1 className="font-pixel font-semibold text-base tracking-wide text-white">POKÉVEAL</h1>
+        <div className="text-white/60 text-[10px] mt-0.5">reveal clues · save coins · catch them all</div>
       </div>
     </header>
   )
@@ -61,7 +61,7 @@ function Chip({ icon: Icon, imgIcon, label, value, color }) {
   }, [value, label])
 
   return (
-    <div className="relative bg-panel border border-panelBorder rounded-xl px-3 py-2 flex items-center gap-2.5 min-w-[104px] transition-all duration-200 hover:border-muted hover:-translate-y-0.5">
+    <div className="relative bg-black/25 backdrop-blur-md border border-white/15 rounded-xl px-3 py-2 flex items-center gap-2.5 min-w-[104px] transition-all duration-200 hover:border-white/30 hover:-translate-y-0.5">
       {delta && (
         <span
           key={delta.id}

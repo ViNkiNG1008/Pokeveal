@@ -17,6 +17,11 @@ export default {
         muted: '#7788a0',
         danger: '#ff5b5b',
         text: '#eef2f9',
+        parchment: '#f5f0dc',
+        parchmentDark: '#eae3c9',
+        cardBorder: '#1b4332',
+        cardBadge: '#2d6a4f',
+        navyWidget: '#0d1527',
       },
       fontFamily: {
         pixel: ['"Baloo 2"', 'sans-serif'],

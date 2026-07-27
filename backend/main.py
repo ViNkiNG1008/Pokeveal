@@ -319,6 +319,16 @@ def login(req: LoginRequest):
 def me(user: dict = Depends(auth.get_current_user)):
     return {"username": user["username"]}
 
+@app.get("/api/debug/db")
+def debug_db():
+    db = auth.get_db()
+    return {
+        "host": str(db.client.address),
+        "db_name": db.name,
+        "users_count": db["users"].count_documents({}),
+        "sample_user": db["users"].find_one({}, {"password_hash": 0}),
+    }
+
 
 # --------------------------------------------------------------------------
 # Game routes (all require a logged-in user)
