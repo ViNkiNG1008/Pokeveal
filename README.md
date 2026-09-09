@@ -5,7 +5,7 @@ Reveal clues. Save coins. Catch them all.
 **🎮 Play it live: [pokeveal.vercel.app](https://pokeveal.vercel.app/)**
 
 <p align="center">
-  <img src="images/screenshot-gameplay.png" alt="PokeVeal gameplay screenshot" width="700" />
+  <img src=""images\pokevealpng.jpeg"" alt="PokeVeal gameplay screenshot" width="700" />
 </p>
 
 A Pokémon guessing game: each round you get a coin budget, and you choose
